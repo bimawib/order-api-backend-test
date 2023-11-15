@@ -35,7 +35,7 @@ public class ProductController {
 		List<Product> products = productRepository.findAll();
 		
 		if(products.size() > 0) {
-			ApiResponse<List<Product>> successResponse = new ApiResponse<>("Products found", HttpStatus.OK.value(), products);
+			ApiResponse<List<Product>> successResponse = new ApiResponse<>("Succesfully retrieve product's data", HttpStatus.OK.value(), products);
 			return new ResponseEntity<>(successResponse, HttpStatus.OK);
 		} else {
 			ApiResponse<String> notFoundResponse = new ApiResponse<>("Product's data not found!", HttpStatus.NOT_FOUND.value(), null);

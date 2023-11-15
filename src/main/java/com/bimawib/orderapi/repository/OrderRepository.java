@@ -8,4 +8,5 @@ import com.bimawib.orderapi.model.Order;
 
 public interface OrderRepository extends MongoRepository<Order, String> {
 	Optional<Order> deleteByProductId(String productId);
+	Optional<Order> deleteByUserId(String userId);
 }

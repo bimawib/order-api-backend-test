@@ -30,7 +30,7 @@ public class Order {
 	@NotEmpty(message = "The product id field cannot be empty")
 	private String productId;
 
-	@Min(value = 0, message = "The amount must be at least 0")
+	@Min(value = 1, message = "The amount must be at least 1")
     @Max(value = 9999, message = "The amount must be at most 9999")
 	private Integer amount;
 	
