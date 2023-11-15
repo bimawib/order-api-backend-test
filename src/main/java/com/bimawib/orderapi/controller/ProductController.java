@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bimawib.orderapi.model.Product;
 import com.bimawib.orderapi.repository.OrderRepository;
 import com.bimawib.orderapi.repository.ProductRepository;
+import com.bimawib.orderapi.response.ApiResponse;
 
 @RestController
 public class ProductController {
@@ -33,10 +35,12 @@ public class ProductController {
 		List<Product> products = productRepository.findAll();
 		
 		if(products.size() > 0) {
-			return new ResponseEntity<List<Product>>(products, HttpStatus.OK);
+			ApiResponse<List<Product>> successResponse = new ApiResponse<>("Products found", HttpStatus.OK.value(), products);
+			return new ResponseEntity<>(successResponse, HttpStatus.OK);
 		} else {
-			return new ResponseEntity<>("Product's data not found!", HttpStatus.NOT_FOUND);
-		}
+			ApiResponse<String> notFoundResponse = new ApiResponse<>("Product's data not found!", HttpStatus.NOT_FOUND.value(), null);
+	        return new ResponseEntity<>(notFoundResponse, HttpStatus.NOT_FOUND);
+	    }
 	}
 	
 	@PostMapping("/product")
@@ -47,9 +51,15 @@ public class ProductController {
 			
 			productRepository.save(product);
 			
-			return new ResponseEntity<Product>(product, HttpStatus.OK);
+			String successMessage = "Successfully create product data";
+			ApiResponse<Product> response = new ApiResponse<>(successMessage, HttpStatus.OK.value(), product);
+			
+			return new ResponseEntity<>(response, HttpStatus.OK);
 		} catch (Exception e) {
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+			String errorMessage = "Failed to create product data: " + e.getMessage();
+	        ApiResponse<String> errorResponse = new ApiResponse<>(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR.value(), null);
+	        
+			return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 	
@@ -58,10 +68,12 @@ public class ProductController {
 		Optional<Product> productResult = productRepository.findById(id);
 		
 		if(productResult.isPresent()) {
-			return new ResponseEntity<>(productResult.get(), HttpStatus.OK);
+			ApiResponse<Product> successResponse = new ApiResponse<>("Product found", HttpStatus.OK.value(), productResult.get());
+			return new ResponseEntity<>(successResponse, HttpStatus.OK);
 		} else {
-			return new ResponseEntity<>("Product with id: " + id + " not found!", HttpStatus.NOT_FOUND);
-		}
+			ApiResponse<String> notFoundResponse = new ApiResponse<>("Product with id: " + id + " not found!", HttpStatus.NOT_FOUND.value(), null);
+	        return new ResponseEntity<>(notFoundResponse, HttpStatus.NOT_FOUND);
+	    }
 	}
 	
 	@PutMapping("/product/{id}")
@@ -74,23 +86,35 @@ public class ProductController {
 			
 			productRepository.save(productToUpdate);
 			
-			return new ResponseEntity<>(productToUpdate, HttpStatus.OK);
+			ApiResponse<Product> successResponse = new ApiResponse<>("Product updated successfully", HttpStatus.OK.value(), productToUpdate);
+	        return new ResponseEntity<>(successResponse, HttpStatus.OK);
 		} else {
-			return new ResponseEntity<>("Product with id: " + id + " not found!", HttpStatus.NOT_FOUND);
+			ApiResponse<String> notFoundResponse = new ApiResponse<>("Product with id: " + id + " not found!", HttpStatus.NOT_FOUND.value(), null);
+	        return new ResponseEntity<>(notFoundResponse, HttpStatus.NOT_FOUND);
 		}
 	}
 	
 	@DeleteMapping("/product/{id}")
-	public ResponseEntity<?> destroy(@PathVariable("id") String id){
-		try {
-			// Because no cascade in mongoDB
-			orderRepository.deleteByProductId(id);
-			productRepository.deleteById(id);
-			
-			return new ResponseEntity<>("Product " + id + " has been deleted!", HttpStatus.OK);
-		} catch (Exception e) {
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-		}
+	public ResponseEntity<ApiResponse<String>> destroy(@PathVariable("id") String id) {
+	    Optional<Product> productResult = productRepository.findById(id);
+
+	    if (productResult.isPresent()) {
+	        try {
+	            // Because no cascade in MongoDB
+	            orderRepository.deleteByProductId(id);
+	            productRepository.deleteById(id);
+
+	            ApiResponse<String> successResponse = new ApiResponse<>("Product deleted successfully", HttpStatus.OK.value(), "Product " + id + " has been deleted!");
+	            return new ResponseEntity<>(successResponse, HttpStatus.OK);
+	        } catch (Exception e) {
+	            ApiResponse<String> errorResponse = new ApiResponse<>("Error deleting product", HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
+	            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+	        }
+	    } else {
+	        ApiResponse<String> notFoundResponse = new ApiResponse<>("Product not found", HttpStatus.NOT_FOUND.value(), "Product with id: " + id + " not found!");
+	        return new ResponseEntity<>(notFoundResponse, HttpStatus.NOT_FOUND);
+	    }
 	}
+
 	
 }
